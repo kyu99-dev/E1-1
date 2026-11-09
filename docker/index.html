@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docker Custom Image</title>
+  <style>
+    /* 기본 여백 제거 및 폰트 설정 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      /* 배경 그라데이션 */
+      background: linear-gradient(135deg, #497eef, #1e3a8a);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+    }
+
+    /* 가운데 카드 영역 */
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      /* 반투명 유리 느낌 */
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 48px 40px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 15px;
+      line-height: 1.6;
+      opacity: 0.9;
+      margin-bottom: 24px;
+    }
+
+    /* 상태 배지 */
+    .status {
+      display: inline-block;
+      background: #22c55e;
+      color: #fff;
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+
+    .info {
+      margin-top: 28px;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🐳</div>
+    <h1>Docker Custom Image</h1>
+    <p>
+      Ubuntu 기반 커스텀 이미지에서<br>
+      Python 웹 서버가 실행 중입니다.
+    </p>
+    <span class="status">● Running</span>
+    <div class="info">
+      Base: Ubuntu 24.04 · Server: Python http.server
+    </div>
+  </div>
+</body>
+</html>

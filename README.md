@@ -4,7 +4,7 @@
 
 터미널, Docker, Git을 이용하여 개발환경을 구성하고 Docker 기반 웹 서버 실행 및 검증 과정을 GitHub에 문서화합니다.
 
-## 1. 제출 저장소 및 기술 문서
+## 1. 기술 문서
 
 ### 1) 실행 환경
 
@@ -19,11 +19,25 @@
  - [x] 권한 변경 실습
  - [x] Docker 설치/점검
  - [x] hello-world 실행
- - [ ] Dockerfile 빌드/실행
- - [ ] 포트 매핑 접속(2회)
- - [ ] 바인드 마운트 반영
+ - [x] Dockerfile 빌드/실행
+ - [x] 포트 매핑 접속
+ - [x] 바인드 마운트 반영
  - [ ] 볼륨 영속성
  - [ ] Git 설정 + VSCode GitHub 연동
+
+### 3) 검증 방법
+
+| 검증 항목 | 사용한 명령어 | 확인한 내용 | 결과 위치 |
+|---|---|---|---|
+| 터미널 기본 조작 및 폴더 구성 | `pwd`, `ls`, `mkdir`, `touch`, `cat`, `cd`, `cp`, `mv`, `rm` | 현재 위치 확인, 목록 조회, 파일/폴더 생성/이동/복사/이름변경/삭제를 수행했는지 확인 | [터미널 조작 로그 기록](#2-터미널-조작-로그-기록) |
+| 파일/폴더 권한 변경 확인 | `ls -l`, `chmod`, `cat` | 권한 변경 전후의 파일/폴더 접근 가능 여부와 권한 표시 변화를 확인 | [권한 실습 및 증거 기록](#3-권한-실습-및-증거-기록) |
+| Docker 설치 및 데몬 동작 확인 | `docker --version`, `docker info` | Docker 버전 출력 여부와 Docker 데몬이 정상 동작하는지 확인 | [Docker 설치 및 기본 점검](#4-docker-설치-및-기본-점검) |
+| Docker 이미지 다운로드 및 목록 확인 | `docker pull`, `docker images` | 이미지가 정상적으로 다운로드되고 이미지 목록에 표시되는지 확인 | [Docker 기본 운영 명령 수행](#5-docker-기본-운영-명령-수행) |
+| 컨테이너 실행/중지/목록 확인 | `docker run`, `docker stop`, `docker ps`, `docker ps -a` | 컨테이너 실행, 중지, 실행 중 목록과 전체 목록의 차이를 확인 | [Docker 기본 운영 명령 수행](#5-docker-기본-운영-명령-수행) |
+| 컨테이너 로그 및 리소스 확인 | `docker logs`, `docker stats` | 컨테이너 로그 출력과 실행 중 컨테이너의 리소스 사용량을 확인 | [Docker 기본 운영 명령 수행](#5-docker-기본-운영-명령-수행) |
+| hello-world 및 Ubuntu 컨테이너 실행 확인 | `docker run hello-world`, `docker run -it ubuntu bash` | hello-world 실행 메시지와 Ubuntu 컨테이너 내부 진입을 확인 | [컨테이너 실행 실습](#6-컨테이너-실행-실습) |
+| 컨테이너 종료/유지 및 재접속 확인 | `exit`, `Ctrl + P + Q`, `docker attach`, `docker exec` | 컨테이너가 종료되는 경우와 유지되는 경우, attach/exec 접속 차이를 확인 | [컨테이너 실행 실습](#3-컨테이너-종료유지-차이) |
+
 
 ## 2. 터미널 조작 로그 기록
 
@@ -193,6 +207,25 @@ drwxr-x--- 5 kyu kyu 4096 Nov  4 09:47 ..
 ```
 `a1` 파일의 권한이 `-rw-r--r--`에서 `-rw-------`로 변경된 것을 확인하였다.
 
+#### 권한 변경 전/후 차이
+
+권한 변경 전에는 파일에 읽기 권한이 있었기 때문에 `cat` 명령어를 실행할 수 있었다.
+
+```text
+kyu@localhost:~/abc$ ls -l
+-r-------- 1 kyu kyu    2 Nov  4 16:29 a1
+
+kyu@localhost:~/abc$ cat ./a1
+a
+
+kyu@localhost:~/abc$ chmod 300 a1
+```
+`--wx------ 1 kyu kyu    2 Nov  4 16:29 a1` 읽기 권한이 없을 경우 파일을 읽을 수 없었다
+```text
+kyu@localhost:~/abc$ cat ./a1
+cat: ./a1: Permission denied
+```
+
 #### 1-2) 폴더
 
 `ls -al` 명령어를 사용하여 디렉터리의 권한을 확인하였다.  
@@ -217,6 +250,54 @@ drwx------ 2 kyu kyu 4096 Nov  4 10:27 aaa
 ```
 
 `aaa` 디렉터리의 권한이 `dr-x------`에서 `drwx------`로 변경된 것을 확인하였다.
+
+#### 권한 변경 전/후 차이
+
+디렉터리에 읽기 권한과 실행 권한이 있으면 디렉터리 내부 목록을 확인할 수 있다.
+
+```text
+kyu@localhost:~/abc$ ls -l
+total 8
+--wx------ 1 kyu kyu    2 Nov  4 16:29 a1
+drwx------ 2 kyu kyu 4096 Nov  4 10:27 aaa
+-rwx------ 1 kyu kyu    0 Nov  4 09:51 abc
+-rw-r--r-- 1 kyu kyu    0 Nov  4 09:57 test
+kyu@localhost:~/abc$ ls -l ./aaa
+total 0
+-rw-r--r-- 1 kyu kyu 0 Nov  4 10:27 abc
+```
+
+위 결과에서 `aaa` 디렉터리는 `drwx------` 권한을 가지고 있다.  
+소유자에게 읽기 권한과 실행 권한이 있으므로 `ls -l ./aaa` 명령어로 내부 파일 목록을 확인할 수 있다.
+
+디렉터리에서 읽기 권한이 제거되면 내부 목록을 확인할 수 없다.
+
+```text
+kyu@localhost:~/abc$ ls -l
+total 8
+--wx------ 1 kyu kyu    2 Nov  4 16:29 a1
+d-wx------ 2 kyu kyu 4096 Nov  4 10:27 aaa
+-rwx------ 1 kyu kyu    0 Nov  4 09:51 abc
+-rw-r--r-- 1 kyu kyu    0 Nov  4 09:57 test
+kyu@localhost:~/abc$ ls -l ./aaa
+ls: cannot open directory './aaa': Permission denied
+```
+
+디렉터리 내부의 파일 목록을 조회할 수 없어 `Permission denied` 오류가 발생한다.
+
+하지만 실행 권한이 남아 있으면, 파일 이름을 이미 알고 있는 경우 해당 경로로 접근할 수 있다.
+
+```text
+kyu@localhost:~/abc$ ls -l
+total 12
+--wx------ 1 kyu kyu    2 Nov  4 16:29 a1
+d-wx------ 2 kyu kyu 4096 Nov  4 16:40 aaa
+-rwx------ 1 kyu kyu    4 Nov  4 16:39 abc
+-rw-r--r-- 1 kyu kyu    0 Nov  4 09:57 test
+kyu@localhost:~/abc$ cat ./aaa/abc
+abc
+```
+읽기 권한이 없어 목록 조회는 불가능하지만, 실행 권한이 있으면 이미 알고 있는 파일명에 대해서는 직접 접근할 수 있다.
 
 ## 4. Docker 설치 및 기본 점검
 
@@ -456,13 +537,133 @@ CONTAINER ID   IMAGE     COMMAND   CREATED             STATUS          PORTS    
 
 ## 7. 기존 Dockerfile 기반 커스텀 이미지 제작
 
-## 8. 포트 매핑 및 접속 증거
+### 📁 관련 파일
 
-## 9. Docker 볼륨 영속성 검증
+- [📄 Dockerfile](docker/Dockerfile) — 커스텀 이미지 설정 파일
+- [🗒️ index.html](docker/index.html) — 메인 페이지 소스
 
-## 10. Git 설정 및 GitHub 연동
+### 1) 선택한 기존 베이스
+**(B) Linux 베이스 이미지 + 기본 기능 추가**
 
-## 11. 보안 및 개인정보 보호
+
+### 1-1) 선택한 베이스 이미지
+
+```dockerfile
+FROM ubuntu:24.04
+```
+**Ubuntu 24.04 공식 이미지**를 베이스로 선택했습니다.
+
+### 1-2) 선택 이유
+
+| 항목 | 내용 |
+|---|---|
+| 방식 | Linux 베이스 이미지 + 기본 기능 추가 방식 |
+| 안정성 | 공식 이미지라 신뢰성이 높고 자료가 풍부함 |
+| 확장성 | `apt` 패키지 관리로 필요한 기능을 자유롭게 추가 가능 |
+| 학습 목적 | 패키지 설치, 사용자 생성 등 커스터마이징 과정을 직접 구성 가능 |
+
+> Ubuntu를 선택하여 실제 서버 환경과 유사한 구성을 경험하도록 했습니다.
+
+---
+
+### 1-3) 적용한 커스텀 포인트와 목적
+
+| 커스텀 포인트 | 코드 | 목적 요약 |
+|---|---|---|
+| 베이스 이미지 | `FROM ubuntu:24.04` | Linux 기반 환경 구성 |
+| 환경변수 | `ENV APP_HOME=/app`, `ENV APP_PORT=8080` | 경로·포트 값을 변수화하여 재사용성 향상 |
+| 대화형 방지 | `ENV DEBIAN_FRONTEND=noninteractive` | 패키지 설치 중 대화형 프롬프트 차단 (빌드 중단 방지) |
+| 패키지 설치 | `apt-get install -y python3 curl ca-certificates` | 웹 서버(python3), 헬스체크(curl), 인증서(ca-certificates) 설치 |
+| 설치 최적화 | `--no-install-recommends` | 추천 패키지 제외로 이미지 크기 최소화 |
+| 캐시 정리 | `rm -rf /var/lib/apt/lists/*` | apt 캐시 삭제로 이미지 용량 절감 |
+| 사용자 생성 | `groupadd`, `useradd` | root가 아닌 전용 사용자 생성 (보안 강화) |
+| 작업 디렉터리 | `WORKDIR ${APP_HOME}` | 작업 경로 표준화 |
+| 파일 복사 | `COPY index.html ${APP_HOME}/index.html` | 정적 웹 파일을 이미지에 포함 |
+| 권한 설정 | `chown -R appuser:appgroup ${APP_HOME}` | 전용 사용자에게 파일 소유권 부여 |
+| 비root 실행 | `USER appuser` | 보안을 위해 일반 사용자 권한으로 실행 |
+| 포트 명시 | `EXPOSE 8080` | 사용 포트 문서화 |
+| 헬스체크 | `HEALTHCHECK ... curl ...` | 컨테이너 정상 동작 여부 자동 점검 |
+| 실행 명령 | `CMD python3 -m http.server ...` | 컨테이너 시작 시 웹 서버 자동 실행 |
+
+---
+
+### 2) 빌드/실행 명령 및 결과 로그
+```bash
+docker build -t custom-ubuntu-web:1.0 .
+```
+
+![docker build 실행 결과](images/docker-build-result.png)
+
+### 2-1) 포트 매핑 및 접속 증거
+```text
+kyu@localhost:~/docker/custom-linux-image$ docker run -d --name ubuntu-web-container -p 8080:8080 custom-ubuntu-web:1.0
+d50ebded43fe517847310740f1a9cc322f1a0b2438d7789e87b7dcb0eef1b43d
+```
+![포트 맵핑 접속 증거](images/web-browser-result.png)
+
+
+## 8. Docker 바인드 마운트 반영 + 볼륨 영속성 검증
+### 1) 바인드 마운트 반영
+```bash
+docker run -d --name web-bind -p 8080:8080 -v $(pwd)/html:/app custom-ubuntu-web:1.0
+```
+### html/index.html 변경 전
+![bind-mount-before](images/bind-mount-before.png)
+### html/index.html 변경 후
+![bind-mount-after](images/bind-mount-after.png)
+
+### 2) 볼륨 영속성
+
+(1) 볼륨생성
+
+```text
+kyu@localhost:~/E1-1$ docker volume create my-data
+my-data
+```
+
+(2) 볼륨을 연결해서 실행
+```text
+kyu@localhost:~/E1-1$ docker run -d --name web-vol -p 8880:8080 -v my-data:/app custom-ubuntu-web:1.0
+ed81481a6367a25484269755557bc047993282a2e65f63aa87f55cf84b632fa6
+```
+(3) 컨테이너 안에서 데이터 생성
+```text
+docker exec web-vol sh -c 'echo "<meta charset="UTF-8"><h1>볼륨 영속성 테스트</h1>" > /app/index.html'
+```
+(4) 삭제 전
+```text
+kyu@localhost:~/E1-1$ docker exec web-vol cat /app/index.html
+<meta charset=UTF-8><h1>볼륨 영속성 테스트</h1>
+```
+![vol-before](images/vol-before.png)
+
+(5) 컨테이너 삭제
+```text
+kyu@localhost:~/E1-1$ docker rm -f web-vol
+web-vol
+```
+(6) 같은 볼륨으로 새 컨테이너 생성 및 데이터 유지 확인
+```text
+kyu@localhost:~/E1-1$ docker run -d --name web-vol-2 -p 8888:8080 -v my-data:/app custom-ubuntu-web:1.0
+2e8ebf033583d1800c295c8d5ba01105bfdea55fb0960734ea9c64b2a4e84bb4
+kyu@localhost:~/E1-1$ docker exec web-vol-2 cat /app/index.html
+<meta charset=UTF-8><h1>볼륨 영속성 테스트</h1>
+```
+![vol-after](images/vol-after.png)
+
+
+## 9. Git 설정 및 GitHub 연동
+
+```text
+kyu@localhost:~/E1-1$ git config --global user.name
+kyu
+kyu@localhost:~/E1-1$ git config --global user.email
+350639298+kyu99-dev@users.noreply.github.com
+kyu@localhost:~/E1-1$ git config --global init.defaultBranch
+main
+```
+
+
 
 ## 보너스 과제
 ### 1) Docker Compose 기초
