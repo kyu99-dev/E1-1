@@ -1,0 +1,7 @@
+services:
+  web:
+    image: nginx
+    environment:
+      - APP_MODE=${APP_MODE}      # .env의 APP_MODE 값이 들어감
+    ports:
+      - "${APP_PORT}:80"          # .env의 APP_PORT 값이 들어감
