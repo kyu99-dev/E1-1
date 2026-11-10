@@ -549,6 +549,9 @@ CONTAINER ID   IMAGE     COMMAND   CREATED             STATUS          PORTS    
 - [📄 Dockerfile](docker/Dockerfile) — 커스텀 이미지 설정 파일
 - [🗒️ index.html](docker/index.html) — 메인 페이지 소스
 
+docker 폴더 안에 도커 설정 파일인 Dockerfile과 웹 서버에서 제공할 index.html 파일을 구성하였다.
+
+
 ### 1) 선택한 기존 베이스
 **(B) Linux 베이스 이미지 + 기본 기능 추가**
 
