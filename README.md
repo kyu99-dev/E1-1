@@ -24,7 +24,7 @@
  - [x] 바인드 마운트 반영
  - [x] 볼륨 영속성
  - [x] Git 설정 + VSCode GitHub 연동
- - [ ] 보너스 과제
+ - [x] 보너스 과제
 
 ### 3) 검증 방법
 
@@ -38,7 +38,12 @@
 | 컨테이너 로그 및 리소스 확인 | `docker logs`, `docker stats` | 컨테이너 로그 출력과 실행 중 컨테이너의 리소스 사용량을 확인 | [Docker 기본 운영 명령 수행](#5-docker-기본-운영-명령-수행) |
 | hello-world 및 Ubuntu 컨테이너 실행 확인 | `docker run hello-world`, `docker run -it ubuntu bash` | hello-world 실행 메시지와 Ubuntu 컨테이너 내부 진입을 확인 | [컨테이너 실행 실습](#6-컨테이너-실행-실습) |
 | 컨테이너 종료/유지 및 재접속 확인 | `exit`, `Ctrl + P + Q`, `docker attach`, `docker exec` | 컨테이너가 종료되는 경우와 유지되는 경우, attach/exec 접속 차이를 확인 | [컨테이너 실행 실습](#3-컨테이너-종료유지-차이) |
-
+| 웹페이지 한글 깨짐 해결 확인 | `curl`, `docker exec` | 문자 인코딩(UTF-8) 설정 전후로 한글이 정상 표시되는지 확인 | [트러블슈팅 1 — 웹페이지 한글 깨짐](#트러블슈팅-1--웹페이지-한글-깨짐) |
+| 바인드 마운트 폴더 소유권 문제 해결 확인 | `ls -l`, `chown`, `docker run -u` | 바인드 마운트 폴더가 root 소유로 생성되는 현상과 소유권/실행 사용자 변경 후 접근 가능 여부를 확인 | [트러블슈팅 2 — 바인드 마운트 폴더가 root 소유로 생성됨](#트러블슈팅-2--바인드-마운트-폴더가-root-소유로-생성됨) |
+| Docker Compose 기초 동작 확인 | `docker compose up -d`, `docker compose ps`, `docker compose down` | Compose 파일로 단일 서비스가 정상 기동·조회·종료되는지 확인 | [Docker Compose 기초](#1-docker-compose-기초) |
+| 멀티 컨테이너 통신 확인 | `docker compose up -d`, `docker compose logs`, `docker compose exec` | 여러 서비스가 함께 기동되고 서비스명으로 상호 통신되는지 확인 | [Docker Compose 멀티 컨테이너](#2-docker-compose-멀티-컨테이너) |
+| 환경 변수 주입 및 적용 확인 | `docker compose exec`, `printenv`, `docker compose config` | `.env` 설정값이 컨테이너 내부 환경 변수로 정상 주입되는지 확인 | [환경 변수 활용](#3-환경-변수-활용) |
+| GitHub SSH 키 설정 및 연결 확인 | `ssh-keygen`, `ssh -T git@github.com`, `git remote -v`, `git push` | SSH 키 생성·등록 후 GitHub 인증이 성공하고 SSH 주소로 push가 정상 동작하는지 확인 | [GitHub SSH 키 설정](#4-github-ssh-키-설정) |
 
 ## 2. 터미널 조작 로그 기록
 
@@ -788,7 +793,7 @@ web-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6
 redis-1  | 1:M 10 Nov 2026 04:39:37.271 * Ready to accept connections tcp
 redis-1  | 1:M 10 Nov 2026 04:39:37.271 # WARNING: Redis does not require authentication and is not protected by network restrictions. Redis will accept connections from any IP address on any network interface.
 ```
-### 4) 환경 변수 활용
+### 3) 환경 변수 활용
 ```yml
 services:
   web:
@@ -815,7 +820,7 @@ kyu@localhost:~/compose-practice-3$ docker compose up -d
 APP_MODE=development
 ```
 
-### 5) GitHub SSH 키 설정
+### 4) GitHub SSH 키 설정
 
 #### ssh key 생성
 
