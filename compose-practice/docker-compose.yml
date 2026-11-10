@@ -1,0 +1,7 @@
+services:              # ① 실행할 서비스들 (필수)
+  web:                 # ② 서비스 이름 (내가 정함)
+    image: nginx:latest  # ③ 사용할 이미지
+    ports:             # ④ 포트 연결
+      - "8080:80"
+    volumes:           # ⑤ 파일/폴더 연결
+      - ./html:/usr/share/nginx/html

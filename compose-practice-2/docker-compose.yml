@@ -1,0 +1,9 @@
+services:
+  web:                     # 웹 서버
+    image: nginx:latest
+    ports:
+      - "8080:80"
+
+  redis:                   # 보조 서비스 (캐시 DB)
+    image: redis:latest
+    # ports 없음! → 외부 노출 안 하고 내부 통신만

@@ -22,8 +22,9 @@
  - [x] Dockerfile 빌드/실행
  - [x] 포트 매핑 접속
  - [x] 바인드 마운트 반영
- - [ ] 볼륨 영속성
- - [ ] Git 설정 + VSCode GitHub 연동
+ - [x] 볼륨 영속성
+ - [x] Git 설정 + VSCode GitHub 연동
+ - [ ] 보너스 과제
 
 ### 3) 검증 방법
 
@@ -662,12 +663,175 @@ kyu@localhost:~/E1-1$ git config --global user.email
 kyu@localhost:~/E1-1$ git config --global init.defaultBranch
 main
 ```
+![vsGithub](images/vscode_github.png)
 
 
+## 10. 트러블슈팅
 
-## 보너스 과제
+### 트러블슈팅 1) — 웹페이지 한글 깨짐
+
+**문제**
+ - 바인드 마운트로 `index.html`을 실시간 수정하며 확인하는데, 브라우저에서 한글이 깨져 표시됨
+
+**원인 가설**
+- HTML 문서에 문자 인코딩 선언이 빠졌을 것이다
+- 브라우저가 인코딩을 잘못 추측해 한글만 깨지는 것으로 보인다
+
+**확인**
+- 영문은 정상, 한글만 깨짐 → 인코딩 문제로 의심
+- `index.html`을 열어 확인 → `<meta charset>` 선언이 없음
+
+**해결/대안**
+
+ - HTML에 UTF-8 인코딩 선언 추가
+
+ - ​```html <meta charset="UTF-8"> ```
+
+→ 브라우저가 문서를 UTF-8로 읽도록 명시하니 한글이 정상 출력됨
+
+
+### 트러블슈팅 2) — 바인드 마운트 폴더가 root 소유로 생성됨
+
+**문제**
+- 바인드 마운트 폴더를 미리 만들지 않고 컨테이너를 실행하니, 폴더가 root 소유로 자동 생성되어 `index.html` 파일이 생성되지 않음
+
+**원인 가설**
+- 마운트 대상 폴더가 없으면 Docker가 자동으로 생성할 것이다
+- 이때 소유자가 `root`로 잡혀 일반 사용자 권한으로는 쓰기가 안 될 것이다
+
+**확인**
+
+​```bash
+ls -l     # 자동 생성된 폴더 소유자 확인 → root
+​```
+
+**해결/대안**
+
+​```bash
+해결: 컨테이너 실행 전에 호스트 폴더를 미리 생성
+mkdir -p ./html
+
+대안: 이미 root 소유로 생성된 경우 소유자 변경
+sudo chown -R $USER ./html
+​```
+
+→ 폴더를 미리 생성하면 현재 사용자 소유로 만들어져 파일 생성 가능
+
+## > 보너스 과제
 ### 1) Docker Compose 기초
+
+#### 1-1) docker-compose.yml 기본 구조
+```yml
+services:              # ① 실행할 서비스들 (필수)
+  web:                 # ② 서비스 이름 (내가 정함)
+    image: nginx:latest  # ③ 사용할 이미지
+    ports:             # ④ 포트 연결
+      - "8080:80"
+    volumes:           # ⑤ 파일/폴더 연결
+      - ./html:/usr/share/nginx/html
+```
+
+> 💡 **들여쓰기(공백 2칸)가 매우 중요**
+> YAML은 들여쓰기로 구조를 구분(Tab 말고 **스페이스** 사용하기)
+
+
+#### 1-2) docker-compose 실행 & 명령어
+```text
+kyu@localhost:~/compose-practice$ docker compose up -d
+[+] up 1/1
+ ✔ Container compose-practice-web-1 Started
+ ```
+![compose-run](images/compose-run.png)
+
+#### 1-3) docker-compose 종료
+```text
+kyu@localhost:~/compose-practice$ docker compose down
+[+] down 2/2
+ ✔ Container compose-practice-web-1 Removed                                                                                                                                                 0.1s
+ ✔ Network compose-practice_default Removed  
+```
+
 ### 2) Docker Compose 멀티 컨테이너
-### 3) compose 운영 명령어 습득
+
+```text
+kyu@localhost:~/compose-practice-2$ docker compose up -d
+[+] up 13/13
+ ✔ Image redis:latest                   Pulled                                                                                                                                              3.7s
+ ✔ Network compose-practice-2_default   Created                                                                                                                                             0.0s
+ ✔ Container compose-practice-2-web-1   Started                                                                                                                                             0.2s
+ ✔ Container compose-practice-2-redis-1 Started                                                                                                                                             0.3s
+```
+docker compose ps 를 통해 두 컨테이너 떴는지 확인(STATUS UP)
+```text
+kyu@localhost:~/compose-practice-2$ docker compose ps
+NAME                         IMAGE          COMMAND                  SERVICE   CREATED         STATUS         PORTS
+compose-practice-2-redis-1   redis:latest   "docker-entrypoint.s…"   redis     5 seconds ago   Up 4 seconds   6379/tcp
+compose-practice-2-web-1     nginx:latest   "/docker-entrypoint.…"   web       5 seconds ago   Up 4 seconds   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+```
+
+web 컨테이너에서 redis로 접속 시도 결과
+```text
+kyu@localhost:~/compose-practice-2$ docker compose exec web bash
+root@a0ff328ee005:/# apt update && apt install -y redis-tools
+root@a0ff328ee005:/# redis-cli -h redis ping
+PONG
+```
+
+```text
+kyu@localhost:~/compose-practice-2$ docker compose logs
+web-1  | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+web-1  | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+web-1  | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+
+ ... 중략 ...
+
+redis-1  | 1:M 10 Nov 2026 04:39:37.271 * Ready to accept connections tcp
+redis-1  | 1:M 10 Nov 2026 04:39:37.271 # WARNING: Redis does not require authentication and is not protected by network restrictions. Redis will accept connections from any IP address on any network interface.
+```
 ### 4) 환경 변수 활용
+```yml
+services:
+  web:
+    image: nginx
+    environment:
+      - APP_MODE=${APP_MODE}      # .env의 APP_MODE 값이 들어감
+    ports:
+      - "${APP_PORT}:80"          # .env의 APP_PORT 값이 들어감
+```
+
+```text
+#.env
+APP_MODE=development
+APP_PORT=8080
+
+```
+```text
+kyu@localhost:~/compose-practice-3$ docker compose up -d
+[+] up 2/2
+ ✔ Network compose-practice-3_default Created                                                                                                                                        0.1s
+ ✔ Container compose-practice-3-web-1 Started   
+
+ kyu@localhost:~/compose-practice-3$ docker compose exec web env |grep APP
+APP_MODE=development
+```
+
 ### 5) GitHub SSH 키 설정
+
+#### ssh key 생성
+
+```text
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+#### 키 등록
+
+![git_sshkey](images/git_sshkey.png)
+
+#### 등록확인
+
+```text
+kyu@localhost:~/.ssh$ ssh -T git@github.com
+
+ ... 중략 ...
+
+Hi kyu99-dev! You've successfully authenticated, but GitHub does not provide shell access.
+```
