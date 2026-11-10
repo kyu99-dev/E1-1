@@ -39,11 +39,12 @@
 | hello-world 및 Ubuntu 컨테이너 실행 확인 | `docker run hello-world`, `docker run -it ubuntu bash` | hello-world 실행 메시지와 Ubuntu 컨테이너 내부 진입을 확인 | [컨테이너 실행 실습](#6-컨테이너-실행-실습) |
 | 컨테이너 종료/유지 및 재접속 확인 | `exit`, `Ctrl + P + Q`, `docker attach`, `docker exec` | 컨테이너가 종료되는 경우와 유지되는 경우, attach/exec 접속 차이를 확인 | [컨테이너 실행 실습](#3-컨테이너-종료유지-차이) |
 | 웹페이지 한글 깨짐 해결 확인 | `curl`, `docker exec` | 문자 인코딩(UTF-8) 설정 전후로 한글이 정상 표시되는지 확인 | [트러블슈팅 1 — 웹페이지 한글 깨짐](#트러블슈팅-1--웹페이지-한글-깨짐) |
+| Git 설정 및 GitHub 연동 | `git config`, `ssh-keygen` | 사용자 정보 설정 및 SSH 키 등록을 통한 원격 저장소 연결 확인 | [Git-설정-및-GitHub-연동](#9-git-설정-및-github-연동) |
 | 바인드 마운트 폴더 소유권 문제 해결 확인 | `ls -l`, `chown`, `docker run -u` | 바인드 마운트 폴더가 root 소유로 생성되는 현상과 소유권/실행 사용자 변경 후 접근 가능 여부를 확인 | [트러블슈팅 2 — 바인드 마운트 폴더가 root 소유로 생성됨](#트러블슈팅-2--바인드-마운트-폴더가-root-소유로-생성됨) |
 | Docker Compose 기초 동작 확인 | `docker compose up -d`, `docker compose ps`, `docker compose down` | Compose 파일로 단일 서비스가 정상 기동·조회·종료되는지 확인 | [Docker Compose 기초](#1-docker-compose-기초) |
 | 멀티 컨테이너 통신 확인 | `docker compose up -d`, `docker compose logs`, `docker compose exec` | 여러 서비스가 함께 기동되고 서비스명으로 상호 통신되는지 확인 | [Docker Compose 멀티 컨테이너](#2-docker-compose-멀티-컨테이너) |
 | 환경 변수 주입 및 적용 확인 | `docker compose exec`, `printenv`, `docker compose config` | `.env` 설정값이 컨테이너 내부 환경 변수로 정상 주입되는지 확인 | [환경 변수 활용](#3-환경-변수-활용) |
-| GitHub SSH 키 설정 및 연결 확인 | `ssh-keygen`, `ssh -T git@github.com`, `git remote -v`, `git push` | SSH 키 생성·등록 후 GitHub 인증이 성공하고 SSH 주소로 push가 정상 동작하는지 확인 | [GitHub SSH 키 설정](#4-github-ssh-키-설정) |
+| GitHub SSH 키 설정 및 연결 확인 | `git config`, `git remote -v`|GitHub 인증이 성공하고 SSH 주소로 push가 정상 동작하는지 확인 | [GitHub SSH 키 설정](#4-github-ssh-키-설정) |
 
 ## 2. 터미널 조작 로그 기록
 
@@ -592,6 +593,10 @@ FROM ubuntu:24.04
 | 실행 명령 | `CMD python3 -m http.server ...` | 컨테이너 시작 시 웹 서버 자동 실행 |
 
 ---
+-> 
+컨테이너는 별도의 네트워크 네임스페이스를 사용하므로, 컨테이너 내부에서 열린 포트는 기본적으로 호스트에서 바로 접근할 수 없어서
+포트 포워딩을 설정해서 호스트의 특정 포트로 들어온 요청이 컨테이너 내부 포트로 전달되어, 외부에서 컨테이너 서비스를 사용할 수 있습니다.
+
 
 ### 2) 빌드/실행 명령 및 결과 로그
 ```bash
@@ -601,6 +606,10 @@ docker build -t custom-ubuntu-web:1.0 .
 ![docker build 실행 결과](images/docker-build-result.png)
 
 ### 2-1) 포트 매핑 및 접속 증거
+
+ - 포트를 연결할 때는 호스트에서 이미 점유 중인 포트를 사용하면 충돌이 발생하므로
+ss -ltnp 또는 lsof -i :포트번호로 포트 점유 프로세스를 확인한 뒤, 해당 프로세스/서비스를 종료하거나 systemctl restart 서비스명으로 재시작한다.
+
 ```text
 kyu@localhost:~/docker/custom-linux-image$ docker run -d --name ubuntu-web-container -p 8080:8080 custom-ubuntu-web:1.0
 d50ebded43fe517847310740f1a9cc322f1a0b2438d7789e87b7dcb0eef1b43d
@@ -617,6 +626,11 @@ docker run -d --name web-bind -p 8080:8080 -v $(pwd)/html:/app custom-ubuntu-web
 ![bind-mount-before](images/bind-mount-before.png)
 ### html/index.html 변경 후
 ![bind-mount-after](images/bind-mount-after.png)
+
+> 절대/상대 경로 사용 권장 사항
+
+- docker run -v에서는 호스트 쪽 경로는 $(pwd)/html처럼 절대 경로로 지정하고, 컨테이너 쪽 경로는 /app처럼 절대 경로로 지정하는 것이 안전합니다.
+
 
 ### 2) 볼륨 영속성
 
@@ -667,6 +681,21 @@ kyu@localhost:~/E1-1$ git config --global user.email
 350639298+kyu99-dev@users.noreply.github.com
 kyu@localhost:~/E1-1$ git config --global init.defaultBranch
 main
+
+kyu@localhost:~/E1-1$ git remote -v
+origin  git@github.com:kyu99-dev/E1-1.git (fetch)
+origin  git@github.com:kyu99-dev/E1-1.git (push)
+
+kyu@localhost:~/E1-1$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 2 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 1.10 KiB | 1.10 MiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To github.com:kyu99-dev/E1-1.git
+   ebd0...9da  main -> main
 ```
 ![vsGithub](images/vscode_github.png)
 
